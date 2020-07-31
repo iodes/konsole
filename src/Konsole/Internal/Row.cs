@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Kodnix.Character.Extensions;
 
 namespace Konsole.Internal
 {
@@ -45,7 +46,8 @@ namespace Konsole.Internal
         /// </summary>
         private WriteResult WriteAndReturnOverflow(ConsoleColor color, ConsoleColor background, int x, string text)
         {
-            int len = text.Length;
+            var eastAsianString = text.ToEastAsianString();
+            int len = eastAsianString.Length;
             int overflow = len + x > _width ? len - (_width - x) : 0;
             bool atLastChar = (len + x == _width);
             // strlen - (width - x)
@@ -55,11 +57,14 @@ namespace Konsole.Internal
             int writeLen = len - overflow;
             // e.g. width 10, x = 6 , string len = 10, overflow = 10-(10-1)=11 
 
-            var writeText = text.Substring(0, writeLen);
-            var overflowText = overflow > 0 ? text.Substring(writeLen, overflow) : null;
+            var writeText = eastAsianString.Substring(0, writeLen);
+            var overflowText = overflow > 0 ? eastAsianString.Substring(writeLen) : null;
+
             // todo; consider asignment overrides? 
-            for (int i = 0; i < writeLen; i++) Cells[i + x] = Cells[i + x].WithChar(writeText[i], color, background);
-            return new WriteResult(writeText,overflowText, atLastChar);
+            for (int i = 0; i < writeText.Characters.Count; i++)
+                Cells[i + x] = Cells[i + x].WithChar(writeText.Characters[i], color, background);
+
+            return new WriteResult(writeText.Value, overflowText?.Value, atLastChar);
         }
 
         public override string ToString()
